@@ -10,17 +10,18 @@
 <body class="bg-light">
   <div id="app" class="container py-4">
     <h1 class="mb-4 text-primary">Owner Dashboard</h1>
-
-    <!-- Walk request form -->
-    <div class="card mb-4">
+    <button @click="logout" class="btn btn-outline-secondary mb-3">Logout</button> <div class="card mb-4">
       <div class="card-header bg-primary text-white">
         Create New Walk Request
       </div>
       <div class="card-body">
         <form @submit.prevent="submitWalkRequest">
           <div class="mb-3">
-            <label class="form-label">Dog ID</label>
-            <input v-model="form.dog_id" type="number" class="form-control" required>
+            <label class="form-label">Dog</label> <select v-model="form.dog_id" class="form-select" required> <option disabled value="">Please select a dog</option>
+              <option v-for="dog in ownedDogs" :key="dog.dog_id" :value="dog.dog_id">
+                {{ dog.name }} ({{ dog.breed }})
+              </option>
+            </select>
           </div>
           <div class="mb-3">
             <label class="form-label">Requested Date & Time</label>
@@ -39,11 +40,9 @@
       </div>
     </div>
 
-    <!-- Success or error messages -->
     <div v-if="message" class="alert alert-info">{{ message }}</div>
     <div v-if="error" class="alert alert-danger">{{ error }}</div>
 
-    <!-- List of walk requests -->
     <h2 class="mb-3">My Walk Requests</h2>
     <div class="row" v-if="walks.length > 0">
       <div class="col-md-6 mb-4" v-for="walk in walks" :key="walk.request_id">
@@ -77,15 +76,32 @@
         });
 
         const walks = ref([]);
+        const ownedDogs = ref([]); // ADDED: New ref to store dogs owned by the logged-in user for Question 15
         const message = ref('');
         const error = ref('');
 
         async function loadWalks() {
           try {
             const res = await fetch('/api/walks');
+            // MODIFIED: Added error check for fetch response
+            if (!res.ok) throw new Error('Failed to load walk requests');
             walks.value = await res.json();
           } catch (err) {
             error.value = 'Failed to load walk requests';
+            console.error("Error loading walks:", err); // ADDED: console.error for better debugging
+          }
+        }
+
+        // ADDED FUNCTION: loadOwnedDogs for Question 15
+        async function loadOwnedDogs() {
+          try {
+            // Assuming an API endpoint to get dogs for the current owner
+            const res = await fetch('/api/dogs/mine'); // Example endpoint
+            if (!res.ok) throw new Error('Failed to load owned dogs');
+            ownedDogs.value = await res.json();
+          } catch (err) {
+            error.value = 'Failed to load your dogs';
+            console.error("Error loading owned dogs:", err);
           }
         }
 
@@ -112,19 +128,35 @@
           } catch (err) {
             error.value = err.message;
             message.value = '';
+            console.error("Error submitting walk request:", err); // ADDED: console.error for better debugging
+          }
+        }
+
+        // ADDED FUNCTION: logout for Question 14
+        async function logout() {
+          try {
+            const res = await fetch('/api/logout', { method: 'POST' }); // Assuming a logout API endpoint
+            if (!res.ok) throw new Error('Logout failed');
+            window.location.href = 'index.html'; // Redirect to login page
+          } catch (err) {
+            console.error("Logout error:", err);
+            // Optionally, display an error message to the user
           }
         }
 
         onMounted(() => {
           loadWalks();
+          loadOwnedDogs(); // ADDED: Load owned dogs on mount for Question 15
         });
 
         return {
           form,
           walks,
+          ownedDogs, // EXPOSED: ownedDogs ref for template
           message,
           error,
-          submitWalkRequest
+          submitWalkRequest,
+          logout // EXPOSED: logout function for template
         };
       }
     }).mount('#app');

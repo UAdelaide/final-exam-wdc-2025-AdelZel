@@ -13,16 +13,123 @@
     <h1 class="mb-4 text-primary">{{ message }}</h1>
     <p class="lead">Connect with trusted walkers for your beloved dog!</p>
 
-    <a href="owner-dashboard.html" class="btn btn-outline-primary me-2">Owner Dashboard</a>
-    <a href="walker-dashboard.html" class="btn btn-outline-success">Walker Dashboard</a>
-  </div>
+    <div class="card mb-4">
+      <div class="card-header bg-primary text-white">
+        Login
+      </div>
+      <div class="card-body">
+        <form @submit.prevent="login">
+          <div class="mb-3">
+            <label for="username" class="form-label">Username</label>
+            <input type="text" class="form-control" id="username" v-model="form.username" required>
+          </div>
+          <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" v-model="form.password" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+        <div v-if="error" class="alert alert-danger mt-3">{{ error }}</div>
+      </div>
+    </div>
+    <h2 class="mb-3">Our Beloved Dogs</h2>
+    <div v-if="dogs.length > 0" class="row">
+      <div class="col-md-4 mb-4" v-for="dog in dogs" :key="dog.dog_id">
+        <div class="card h-100">
+          <img :src="dog.randomPhoto" class="card-img-top" alt="Random dog photo" style="height: 200px; object-fit: cover;">
+          <div class="card-body">
+            <h5 class="card-title">{{ dog.name }}</h5>
+            <p class="card-text">
+              <strong>Breed:</strong> {{ dog.breed }}<br>
+              <strong>Size:</strong> {{ dog.size }}<br>
+              <strong>Owner:</strong> {{ dog.owner_name }}
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p v-else>No dogs to display yet.</p>
+    </div>
 
   <script>
-    const { createApp } = Vue;
+    const { createApp, ref, onMounted } = Vue; // MODIFIED: Added 'ref' and 'onMounted' for Vue Composition API
+
     createApp({
-      data() {
+      // MODIFIED: Replaced 'data()' with 'setup()' for Composition API
+      setup() {
+        const message = ref('Welcome to the Dog Walking Service!');
+        const form = ref({ // ADDED: Reactive form data for login
+          username: '',
+          password: ''
+        });
+        const error = ref(''); // ADDED: Reactive error message
+        const dogs = ref([]); // ADDED: New ref to store all dogs for Q17
+
+        // ADDED FUNCTION: login for Question 13
+        async function login() {
+          try {
+            const res = await fetch('/api/login', { // Assuming a login API endpoint
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(form.value)
+            });
+            const result = await res.json();
+
+            if (!res.ok) {
+              throw new Error(result.error || 'Login failed');
+            }
+
+            // On successful login, redirect based on user role
+            if (result.role === 'owner') { // Assuming the API returns a 'role'
+              window.location.href = 'owner-dashboard.html';
+            } else if (result.role === 'walker') {
+              window.location.href = 'walker-dashboard.html';
+            } else {
+              throw new Error('Unknown user role');
+            }
+
+          } catch (err) {
+            error.value = err.message;
+            console.error("Login error:", err);
+          }
+        }
+
+        // ADDED FUNCTION: fetchAllDogs for Question 17
+        async function fetchAllDogs() {
+            try {
+                const res = await fetch('/api/dogs'); // Assuming an endpoint to get all dogs
+                if (!res.ok) throw new Error('Failed to fetch dogs');
+                const fetchedDogs = await res.json();
+
+                // Fetch a random photo for each dog
+                for (const dog of fetchedDogs) {
+                    const photoRes = await fetch('https://dog.ceo/api/breeds/image/random');
+                    if (!photoRes.ok) {
+                        console.warn(`Failed to fetch random photo for ${dog.name}`);
+                        dog.randomPhoto = 'https://via.placeholder.com/200?text=No+Photo'; // Placeholder if fetch fails
+                    } else {
+                        const photoData = await photoRes.json();
+                        dog.randomPhoto = photoData.message;
+                    }
+                }
+                dogs.value = fetchedDogs;
+            } catch (err) {
+                console.error("Error fetching dogs:", err);
+                error.value = 'Failed to load dog information.';
+            }
+        }
+
+        // ADDED: onMounted hook to fetch dogs when the component mounts for Q17
+        onMounted(() => {
+            fetchAllDogs();
+        });
+
         return {
-          message: 'Welcome to the Dog Walking Service!'
+          message,
+          form,
+          error,
+          dogs, // EXPOSED: dogs ref for template
+          login // EXPOSED: login function for template
         };
       }
     }).mount('#app');

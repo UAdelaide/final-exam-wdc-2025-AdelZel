@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html land="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dog of the day</title>
+    <style>
+
+        body {
+            background: linear-gradient(45deg, red, yellow, blue, green, purple);
+            animation: flash 0.5s infinite;
+            margin: 0;
+        }
+
+        @keyframes flash {
+            0% {filter: brightness(1);}
+            50% {filter: brightness(2);}
+            100% {filter: brightness(1);}
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: rgba(255,255,255,0.2);
+            padding: 20px;
+            animation: shake 1s infinite;
+        }
+
+        @keyframes shake {
+            0% {transform: translateX(0);}
+            25% {transform: translateX(-10px) rotate(-5deg);}
+            75% {transform: translateX(10px) rotateX(5deg);}
+            100% {transform: translateX();}
+        }
+
+        h1 {
+            color: yellow;
+            text-align: center;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            from {transform: rotate(0deg);}
+            to {transform: rotate(360deg);}
+        }
+
+        .dog-card {
+            display: flex;
+            gap: 20px;
+            background: linear-gradient(90deg);
+            padding: 20px;
+            margin: 20px;
+            animation: bounce 0.5s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% {transform: translateY(0);}
+            50% {transform: translateY(-20px);}
+        }
+
+        .dog-image {
+            width: 150px;
+            height: 150px;
+            border:  3px solid yellow;
+            animation: wiggle 0.3s infinite;
+        }
+
+        @keyframes wiggle {
+            0% {transform: rotate(-5deg);}
+            50% {transform: rotate(5deg);}
+            100% {transform: rotate(-5deg);}
+        }
+
+        .dog-info {
+            color: white;
+            text-shadow: 2px 2px black;
+        }
+
+        .buttons {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .btn {
+            background:  linear-gradient(red, orange, yellow);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            margin: 5px;
+            font-size: 16px;
+            animation:  pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% {transform:  scale(1);}
+            50% {transform:  scale(1.2);}
+            100% {transform:  scale(1);}
+        }
+
+        .small-text {
+            font-size: 6px;
+            color: #ccc;
+            background: #ddd;
+        }
+        
+        .popup {
+            position: fixed;
+            top: 50px;
+            right: 50px;
+            background: red;
+            color: yellow;
+            padding: 10px;
+            animation: jump 0.2s infinite;
+        }
+        
+        @keyframes jump {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-30px); }
+        }
+
+    </style>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+
+<body>
+
+    <div id="app">
+        <div class="popup">CLICK ME!</div>
+
+        <div class="container">
+            <h1>DOG OF THE DAY</h1>
+
+            <div v-if="loading">Loading...</div>
+
+            <div v-else class="dog-card">
+                <img :src="dogImage" class="dog-image">
+
+                <div class="dog-info">
+                    <h2>{{ dogName }}</h2>
+                    <p>Breed: {{ dogBreed }}</p>
+                    <p>Age: {{ dogAge }} years</p>
+                    <p>Size: {{ dogSize }}</p>
+                    <p>Contacn info here</p>
+                </div>
+            </div>
+
+            <div class="buttons">
+                <button class="btn" @click="loadNewDog">NEw DoG</button>
+                <button class="btn" @click="likeDog">LiKE</button>
+                <button class="btn" @click="shareDog">ShARe</button>
+                <button class="btn" @click="bookWalks">bOOk</button>
+                <button class="btn" @click="contact">cOnTaCt</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        
+        createApp({
+            data() {
+                return {
+                    loading: true,
+                    dogImage: '',
+                    dogName: 'Buddy',
+                    dogBreed: 'Golden Retriever',
+                    dogAge: 3,
+                    dogSize: 'Medium'
+                }
+            },
+            async mounted() {
+                await this.loadDogImage();
+                this.loading = false;
+            },
+            methods: {
+                async loadDogImage() {
+                    try {
+                        const response = await fetch('https://dog.ceo/api/breeds/image/random');
+                        const data = await response.json();
+                        this.dogImage = data.message;
+                    } catch (error) {
+                        this.dogImage = 'https://via.placeholder.com/150x150?text=Dog';
+                    }
+                },
+                async loadNewDog() {
+                    this.loading = true;
+                    await this.loadDogImage();
+                    const names = ['Max', 'Bella', 'Charlie', 'Luna'];
+                    const breeds = ['Labrador', 'Poodle', 'Bulldog'];
+                    this.dogName = names[Math.floor(Math.random() * names.length)];
+                    this.dogBreed = breeds[Math.floor(Math.random() * breeds.length)];
+                    this.dogAge = Math.floor(Math.random() * 10) + 1;
+                    this.loading = false;
+                },
+                likeDog() { alert('Liked!'); },
+                shareDog() { alert('Shared!'); },
+                bookWalk() { alert('Booking...'); },
+                contact() { alert('Contacting...'); }
+            }
+        }).mount('#app');
+    </script>
+
+</body>
+</html>
